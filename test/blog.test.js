@@ -4,7 +4,7 @@ const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../models/blog')
 const bcrypt = require('bcrypt')
-const User = require('../models/user')
+const User = require('../models/users')
 const api = supertest(app)
 const assert = require('assert').strict
 const helper = require('./test_helper')
@@ -136,7 +136,7 @@ describe('Delete data', () => {
   })
 })
 
-describe.only('Update data', () => {
+describe('Update data', () => {
 
   var blogsId
   
@@ -196,6 +196,36 @@ describe('when there is initially one user in db', () => {
 
     const usernames = usersAtEnd.map(u => u.username)
     assert(usernames.includes(newUser.username))
+  })
+})
+
+describe.only('when name or password does not meet the requirements', () => {
+  test('username too short', async () => {
+    const testUser = {
+      "username": "qwe",
+      "name": "Juan Perez",
+      "password": "uwqerqw"
+    }
+
+    const result = await api
+    .post('/api/users')
+    .send(testUser)
+    .expect(400)
+
+  })
+
+  test('username duplicate', async () => {
+    const testUser = {
+      "username": "qwe",
+      "name": "Juan Perez",
+      "password": "uwqerqw"
+    }
+
+    const result = await api
+    .post('/api/users')
+    .send(testUser)
+    .expect(400)
+
   })
 })
 
