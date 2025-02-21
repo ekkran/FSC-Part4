@@ -1,15 +1,5 @@
 const blogRouter = require('express').Router()
 const Blog = require('../models/blog')
-const User = require('../models/users')
-const jwt = require('jsonwebtoken')
-
-const getTokenFrom = request => {
-  const authorization = request.get('authorization')  
-  if (authorization && authorization.startsWith('Bearer ')) {    
-    return authorization.replace('Bearer ', '')  
-  }  
-  return null
-}
 
 blogRouter.get('/', async (request, response) => {
   const blogs = await Blog
@@ -21,12 +11,9 @@ blogRouter.post('/', async (request, response) => {
   
   const blogData = request.body
 
-  const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)  
-  if (!decodedToken.id) {    
-    return response.status(401).json({ error: 'token invalid' })  
-  }
+  const user = request.user
 
-  const user = await User.findById(decodedToken.id)
+  if(!user) return response.status(401).json({error: "invalid token"})
 
   if(!blogData.title){
     response.status(400).json({error: 'blogs need a title'})
@@ -56,6 +43,17 @@ blogRouter.post('/', async (request, response) => {
 
 blogRouter.delete('/:id', async (request, response) => {
   const blogToDelete = request.params.id
+
+  const user = request.user
+
+  const blog = await Blog.findById(blogToDelete)  
+
+  if(!blog) return response.status(404).end()
+
+  if(blog.user.toString() !== user.id.toString()){
+    return response.status(401).json({error:'permission denied'})
+  }
+
   const result = await Blog.findByIdAndDelete(blogToDelete)
   if(result){
     response.status(200).json(result)
